@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#144053" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Seniors Med</title>
+
+  <!-- Explicit webfonts: Montserrat (English) + Noto Naskh Arabic (Arabic) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="app-title">
+        <h1 data-i18n="appTitle">Seniors Med</h1>
+        <p class="app-subtitle" data-i18n="appSubtitle">Geriatric clinic visit record</p>
+      </div>
+      <button id="langToggle" class="btn btn-lang" type="button" aria-label="Switch language">
+        العربية
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Visit form -->
+    <section class="card" aria-labelledby="visitHeading">
+      <h2 id="visitHeading" data-i18n="visitHeading">New visit</h2>
+
+      <form id="visitForm" novalidate>
+        <div class="grid-2">
+          <div class="field">
+            <label for="patientName" data-i18n="patientName">Patient name</label>
+            <input id="patientName" name="patientName" type="text" autocomplete="off" required />
+          </div>
+          <div class="field field--age">
+            <label for="age" data-i18n="age">Age</label>
+            <input id="age" name="age" type="number" min="0" max="130" inputmode="numeric" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="visitDate" data-i18n="visitDate">Date of visit</label>
+          <input id="visitDate" name="visitDate" type="date" />
+        </div>
+
+        <div class="field">
+          <label for="notes" data-i18n="notes">Visit notes</label>
+          <textarea id="notes" name="notes" rows="4"></textarea>
+        </div>
+
+        <fieldset class="meds">
+          <legend data-i18n="medications">Medications</legend>
+          <div id="medsList" class="meds-list"></div>
+          <button id="addMed" class="btn btn-secondary" type="button" data-i18n="addMed">
+            + Add medication
+          </button>
+        </fieldset>
+
+        <p id="formError" class="form-error" role="alert" hidden></p>
+
+        <div class="actions">
+          <button id="generateBtn" class="btn btn-primary" type="submit" data-i18n="generate">
+            Generate record
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Most recently generated record -->
+    <section id="recordSection" class="card" aria-labelledby="recordHeading" hidden>
+      <h2 id="recordHeading" data-i18n="recordHeading">Visit record</h2>
+      <div id="recordOutput"></div>
+    </section>
+
+    <!-- Saved records (persisted in IndexedDB) -->
+    <section class="card" aria-labelledby="savedHeading">
+      <h2 id="savedHeading" data-i18n="savedHeading">Saved records</h2>
+      <p id="noRecords" class="muted" data-i18n="noRecords">No saved records yet.</p>
+      <div id="savedList" class="saved-list"></div>
+    </section>
+  </main>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

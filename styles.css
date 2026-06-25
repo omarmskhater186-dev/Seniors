@@ -1,0 +1,406 @@
+/* ===========================================================================
+   Seniors Med — styles
+   Built with CSS logical properties (margin-inline, padding-inline, start/end)
+   so the entire layout mirrors automatically in Arabic (dir="rtl").
+   =========================================================================== */
+
+:root {
+  /* Brand palette (use exactly) */
+  --aegean: #144053; /* headers, primary text */
+  --baby: #6dcad6;   /* accents */
+  --oceana: #489399; /* secondary */
+  --metal: #9c9da0;  /* muted text / borders */
+  --cloudy: #dddddd; /* backgrounds / dividers */
+  --white: #ffffff;
+
+  --page-bg: #eef3f4;
+  --radius: 14px;
+  --shadow: 0 2px 10px rgba(20, 64, 83, 0.08);
+  --gap: 1.25rem;
+  --touch: 52px; /* min touch target — comfortably above 48px */
+
+  --font-en: "Montserrat", sans-serif;
+  --font-ar: "Noto Naskh Arabic", serif;
+}
+
+/* ----------------------------------------------------------------------------
+   Base / typography — large and legible for seniors and staff
+   ---------------------------------------------------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 19px; /* generous base size */
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-en);
+  color: var(--aegean);
+  background: var(--page-bg);
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Arabic UI: switch the whole interface to the Arabic webfont. */
+html[lang="ar"] body {
+  font-family: var(--font-ar);
+}
+
+/* Force Arabic font + RTL anywhere this class appears (dosing fields/cells),
+   independent of the current interface language. */
+.arabic {
+  font-family: var(--font-ar);
+  direction: rtl;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--aegean);
+  line-height: 1.3;
+  margin: 0 0 0.5em;
+}
+
+h1 {
+  font-size: 1.7rem;
+}
+h2 {
+  font-size: 1.4rem;
+}
+
+.muted {
+  color: var(--metal);
+}
+
+/* ----------------------------------------------------------------------------
+   Header
+   ---------------------------------------------------------------------------- */
+.app-header {
+  background: var(--aegean);
+  color: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.app-header__inner {
+  max-width: 920px;
+  margin-inline: auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-title h1 {
+  color: var(--white);
+  margin: 0;
+}
+
+.app-subtitle {
+  margin: 0.15rem 0 0;
+  color: var(--baby);
+  font-size: 0.95rem;
+}
+
+/* ----------------------------------------------------------------------------
+   Layout
+   ---------------------------------------------------------------------------- */
+.container {
+  max-width: 920px;
+  margin-inline: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--cloudy);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--gap);
+}
+
+/* ----------------------------------------------------------------------------
+   Form fields
+   ---------------------------------------------------------------------------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-block-end: var(--gap);
+}
+
+label,
+legend {
+  font-weight: 600;
+  color: var(--aegean);
+  font-size: 1.05rem;
+}
+
+input,
+textarea {
+  font-family: inherit;
+  font-size: 1.05rem;
+  color: var(--aegean);
+  background: var(--white);
+  border: 2px solid var(--metal);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  min-height: var(--touch);
+  width: 100%;
+}
+
+textarea {
+  min-height: 7rem;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--metal);
+}
+
+input:focus,
+textarea:focus {
+  outline: 3px solid var(--oceana);
+  outline-offset: 1px;
+  border-color: var(--oceana);
+}
+
+/* ----------------------------------------------------------------------------
+   Medications
+   ---------------------------------------------------------------------------- */
+.meds {
+  border: 1px dashed var(--metal);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem 1.25rem;
+  margin-block: var(--gap);
+}
+
+.meds legend {
+  padding-inline: 0.5rem;
+}
+
+.med-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  padding: 0.75rem;
+  border: 1px solid var(--cloudy);
+  border-radius: 10px;
+  margin-block-end: 1rem;
+  background: #fafcfc;
+}
+
+.med-row .field {
+  margin-block-end: 0;
+}
+
+.med-row__remove {
+  display: flex;
+  align-items: end;
+}
+
+/* ----------------------------------------------------------------------------
+   Buttons — big, clearly labeled, high contrast
+   ---------------------------------------------------------------------------- */
+.btn {
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  min-height: var(--touch);
+  padding: 0.7rem 1.4rem;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.btn:hover {
+  filter: brightness(0.95);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--aegean);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--aegean);
+  color: var(--white);
+  font-size: 1.15rem;
+  width: 100%;
+}
+
+.btn-secondary {
+  background: var(--oceana);
+  color: var(--white);
+}
+
+.btn-remove {
+  background: var(--white);
+  color: var(--aegean);
+  border-color: var(--metal);
+}
+
+.btn-lang {
+  background: var(--baby);
+  color: var(--aegean);
+  border-color: var(--baby);
+  font-weight: 700;
+}
+
+.actions {
+  margin-block-start: var(--gap);
+}
+
+.form-error {
+  color: #9b1c1c;
+  background: #fde8e8;
+  border: 1px solid #f8b4b4;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-block: var(--gap) 0;
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------------------
+   Generated / saved record cards
+   ---------------------------------------------------------------------------- */
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.record {
+  border: 1px solid var(--cloudy);
+  border-inline-start: 6px solid var(--oceana);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  background: var(--white);
+}
+
+.record-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-block-end: 2px solid var(--cloudy);
+  padding-block-end: 0.6rem;
+  margin-block-end: 0.9rem;
+}
+
+.record-name {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.record-meta {
+  color: var(--metal);
+  font-size: 0.9rem;
+}
+
+.record-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 0 0 1rem;
+}
+
+.info-pair {
+  display: flex;
+  flex-direction: column;
+}
+
+.record-info dt,
+.record-notes dt,
+.record-meds h4 {
+  font-weight: 600;
+  color: var(--oceana);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.record-info dd,
+.record-notes dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.1rem;
+}
+
+.record-notes {
+  margin-block-end: 1rem;
+}
+
+.record-notes dd {
+  white-space: pre-wrap; /* preserve line breaks in free-text notes */
+}
+
+.record-meds h4 {
+  margin-block-end: 0.5rem;
+}
+
+/* Medications table */
+.med-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.med-table th,
+.med-table td {
+  text-align: start;
+  padding: 0.65rem 0.75rem;
+  border-block-end: 1px solid var(--cloudy);
+  font-size: 1.05rem;
+  vertical-align: top;
+}
+
+.med-table th {
+  background: var(--cloudy);
+  color: var(--aegean);
+  font-weight: 700;
+}
+
+.med-table .med-dose {
+  font-size: 1.2rem; /* dosing is critical — show it a touch larger */
+}
+
+/* ----------------------------------------------------------------------------
+   Responsive — iPad portrait and phones
+   ---------------------------------------------------------------------------- */
+@media (max-width: 680px) {
+  html {
+    font-size: 18px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .med-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .med-row__remove {
+    justify-content: flex-end;
+  }
+
+  .card {
+    padding: 1.1rem;
+  }
+}
