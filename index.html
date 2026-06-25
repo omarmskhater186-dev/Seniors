@@ -7,13 +7,24 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Seniors Med</title>
 
-  <!-- Explicit webfonts: Montserrat (English) + Noto Naskh Arabic (Arabic) -->
+  <!-- Explicit webfonts: Montserrat (English) + Noto Naskh Arabic (Arabic).
+       Loaded asynchronously (media="print" → "all" on load) so the app paints
+       immediately and never hangs on a blank screen if the font CDN is slow or
+       blocked on the user's network. Clean system fallbacks apply meanwhile. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap"
     rel="stylesheet"
+    media="print"
+    onload="this.media='all'"
   />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </noscript>
 
   <link rel="stylesheet" href="styles.css" />
 </head>
