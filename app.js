@@ -50,6 +50,12 @@
       medColDosing: "Dosing",
       medStatus: "Status",
       stoppedThisVisit: "Stopped this visit",
+      addLab: "+ Add lab result",
+      labTest: "Investigation",
+      labTrend: "Trend",
+      labSelect: "Select investigation",
+      labDate: "Date",
+      labValue: "Value",
       noMeds: "No medications recorded.",
       notProvided: "—",
       exportWord: "Download Word record",
@@ -90,6 +96,12 @@
       medColDosing: "الجرعة",
       medStatus: "الحالة",
       stoppedThisVisit: "أُوقفت هذه الزيارة",
+      addLab: "+ إضافة نتيجة مختبر",
+      labTest: "الفحص",
+      labTrend: "الاتجاه",
+      labSelect: "اختر الفحص",
+      labDate: "التاريخ",
+      labValue: "القيمة",
       noMeds: "لا توجد أدوية مسجلة.",
       notProvided: "—",
       exportWord: "تنزيل سجل Word",
@@ -162,6 +174,7 @@
     // Rebuild config-driven inputs so their labels follow the new language.
     buildVitalsInputs();
     buildGeriatricInputs();
+    buildLabInputs();
     buildProblemChips();
 
     if (state.lastRecord) {
@@ -233,6 +246,77 @@
         ])
       );
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Laboratory investigation input rows (built from config catalog)
+  // ---------------------------------------------------------------------------
+  function labTestSelect(selectedId) {
+    const sel = el("select", { class: "lab-test", attrs: { "aria-label": t("labSelect") } });
+    sel.appendChild(el("option", { text: t("labSelect"), attrs: { value: "" } }));
+    (CFG.labs || []).forEach((group) => {
+      const og = el("optgroup", { attrs: { label: cfgLabel(group) } });
+      (group.tests || []).forEach((tst) => {
+        const label = cfgLabel(tst) + (tst.unit ? ` (${tst.unit})` : "");
+        og.appendChild(el("option", { text: label, attrs: { value: tst.id } }));
+      });
+      sel.appendChild(og);
+    });
+    if (selectedId) sel.value = selectedId;
+    return sel;
+  }
+
+  function makeLabRow(data) {
+    data = data || {};
+    const testSel = labTestSelect(data.testId);
+    const dateInput = el("input", {
+      class: "lab-date",
+      attrs: { type: "date", "aria-label": t("labDate") },
+    });
+    if (data.date) dateInput.value = data.date;
+    const valueInput = el("input", {
+      class: "lab-value",
+      attrs: { type: "text", inputmode: "decimal", autocomplete: "off", "aria-label": t("labValue") },
+    });
+    if (data.value) valueInput.value = data.value;
+
+    const removeBtn = el("button", {
+      class: "btn btn-remove",
+      attrs: { type: "button", "data-i18n": "removeMed" },
+      text: t("removeMed"),
+    });
+    const row = el("div", { class: "lab-row" }, [
+      el("div", { class: "field" }, [testSel]),
+      el("div", { class: "field" }, [dateInput]),
+      el("div", { class: "field" }, [valueInput]),
+      el("div", { class: "med-row__remove" }, [removeBtn]),
+    ]);
+    removeBtn.addEventListener("click", () => row.remove());
+    return row;
+  }
+
+  function readLabRows() {
+    const rows = [];
+    document.querySelectorAll("#labRows .lab-row").forEach((r) => {
+      rows.push({
+        testId: r.querySelector(".lab-test").value,
+        date: r.querySelector(".lab-date").value,
+        value: r.querySelector(".lab-value").value.trim(),
+      });
+    });
+    return rows;
+  }
+
+  function buildLabInputs() {
+    const wrap = $("labRows");
+    if (!wrap) return;
+    const existing = readLabRows();
+    wrap.innerHTML = "";
+    if (!existing.length) {
+      wrap.appendChild(makeLabRow());
+    } else {
+      existing.forEach((d) => wrap.appendChild(makeLabRow(d)));
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -376,6 +460,8 @@
       if (val) geriatric[c.getAttribute("data-geriatric")] = val;
     });
 
+    const labs = readLabRows().filter((r) => r.testId && r.value);
+
     const problems = [];
     document.querySelectorAll("#problemChips .chip").forEach((ch) => {
       if (ch.getAttribute("aria-pressed") !== "true") return;
@@ -394,6 +480,7 @@
       geriatric,
       currentSituation: $("currentSituation").value.trim(),
       vitals,
+      labs,
       assessment: $("assessment").value.trim(),
       actionPlan: $("actionPlan").value.trim(),
       meds,
@@ -403,8 +490,10 @@
   function resetForm() {
     $("visitForm").reset();
     $("problemChips").innerHTML = "";
+    $("labRows").innerHTML = "";
     buildVitalsInputs();
     buildGeriatricInputs();
+    buildLabInputs();
     buildProblemChips();
     $("medsList").innerHTML = "";
     $("medsList").appendChild(buildMedRow());
@@ -518,6 +607,107 @@
     );
   }
 
+  // Trend for a test: arrow shows numeric movement; colour shows whether the
+  // value moved toward (improving) or away from (worsening) the normal range.
+  function computeTrend(test, orderedValues) {
+    const seq = orderedValues.filter((n) => isFinite(n));
+    if (seq.length < 2) return null;
+    const prev = seq[seq.length - 2];
+    const cur = seq[seq.length - 1];
+    if (cur === prev) return { arrow: "→", kind: "stable" };
+    const arrow = cur > prev ? "↑" : "↓";
+    let kind = "stable";
+    if (test.low != null || test.high != null) {
+      const dist = (v) => {
+        if (test.low != null && v < test.low) return test.low - v;
+        if (test.high != null && v > test.high) return v - test.high;
+        return 0;
+      };
+      const dp = dist(prev);
+      const dc = dist(cur);
+      if (dc < dp) kind = "improving";
+      else if (dc > dp) kind = "worsening";
+    }
+    return { arrow, kind };
+  }
+
+  function findTest(testId) {
+    for (const group of CFG.labs || []) {
+      const found = (group.tests || []).find((x) => x.id === testId);
+      if (found) return { group, test: found };
+    }
+    return null;
+  }
+
+  function labsBlock(visit) {
+    const entries = (visit.labs || []).filter((e) => e.testId && e.value && String(e.value).trim());
+    if (!entries.length) return null;
+
+    const dates = Array.from(new Set(entries.map((e) => e.date || ""))).sort();
+    const byTest = {};
+    entries.forEach((e) => {
+      (byTest[e.testId] = byTest[e.testId] || {})[e.date || ""] = String(e.value).trim();
+    });
+
+    const headCells = [el("th", { class: "lab-name-h", text: t("labTest") })];
+    dates.forEach((d) =>
+      headCells.push(el("th", { text: d ? formatDate(d) : t("notProvided") }))
+    );
+    headCells.push(el("th", { class: "lab-trend-h", text: t("labTrend") }));
+
+    const tbody = el("tbody", {});
+    (CFG.labs || []).forEach((group) => {
+      const tests = (group.tests || []).filter((tst) => byTest[tst.id]);
+      if (!tests.length) return;
+      tbody.appendChild(
+        el("tr", { class: "lab-group" }, [
+          el("td", {
+            class: "lab-group__cell",
+            attrs: { colspan: String(dates.length + 2) },
+            text: cfgLabel(group),
+          }),
+        ])
+      );
+      tests.forEach((tst) => {
+        const cells = [
+          el("td", { class: "lab-name", text: cfgLabel(tst) + (tst.unit ? ` (${tst.unit})` : "") }),
+        ];
+        const ordered = [];
+        dates.forEach((d) => {
+          const v = byTest[tst.id][d];
+          const td = el("td", { class: "lab-val" });
+          if (v != null && v !== "") {
+            const num = parseFloat(v);
+            if (isFinite(num)) {
+              ordered.push(num);
+              const out =
+                (tst.low != null && num < tst.low) || (tst.high != null && num > tst.high);
+              if (out) td.classList.add("lab-out");
+            }
+            td.textContent = v;
+          }
+          cells.push(td);
+        });
+        const trend = computeTrend(tst, ordered);
+        const trendCell = el("td", { class: "lab-trend" });
+        if (trend) {
+          trendCell.appendChild(
+            el("span", { class: `trend trend--${trend.kind}`, text: trend.arrow })
+          );
+        }
+        cells.push(trendCell);
+        tbody.appendChild(el("tr", { class: "lab-data-row" }, cells));
+      });
+    });
+
+    if (!tbody.children.length) return null;
+    const table = el("table", { class: "lab-table" }, [
+      el("thead", {}, [el("tr", {}, headCells)]),
+      tbody,
+    ]);
+    return el("div", { class: "lab-wrap" }, [table]);
+  }
+
   function medBadge(code) {
     const c = (CFG.medCodes || []).find((x) => x.id === code);
     if (!c || c.tone === "neutral") return null;
@@ -593,7 +783,7 @@
       recordSection("sectionGeriatric", geriatricBlock(visit)),
       recordSection("sectionCurrent", textBlock(visit.currentSituation || visit.notes)),
       recordSection("sectionVitals", vitalsBlock(visit)),
-      recordSection("sectionLabs", null), // Stage 5
+      recordSection("sectionLabs", labsBlock(visit)),
       recordSection("sectionAlerts", null), // Stage 6
       recordSection("sectionAssessment", textBlock(visit.assessment)),
       recordSection("sectionActionPlan", textBlock(visit.actionPlan)),
@@ -710,8 +900,13 @@
 
     buildVitalsInputs();
     buildGeriatricInputs();
+    buildLabInputs();
     buildProblemChips();
     $("medsList").appendChild(buildMedRow());
+
+    $("addLab").addEventListener("click", () => {
+      $("labRows").appendChild(makeLabRow());
+    });
 
     $("addProblem").addEventListener("click", addCustomProblem);
     $("problemOther").addEventListener("keydown", (e) => {

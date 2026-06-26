@@ -440,6 +440,15 @@ select:focus {
     margin-block-end: 0;
   }
 
+  .lab-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .lab-row .field {
+    margin-block-end: 0;
+  }
+
   .med-row__remove {
     justify-content: flex-end;
   }
@@ -478,6 +487,81 @@ select:focus {
 
 .vitals-grid .field {
   margin-block-end: 0.5rem;
+}
+
+/* ----------------------------------------------------------------------------
+   Laboratory investigations — input rows + record table
+   ---------------------------------------------------------------------------- */
+.lab-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  padding: 0.75rem;
+  border: 1px solid var(--cloudy);
+  border-radius: 10px;
+  margin-block-end: 1rem;
+  background: #fafcfc;
+}
+
+.lab-wrap {
+  overflow-x: auto; /* date columns can be wide on small screens */
+}
+
+.lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 480px;
+}
+
+.lab-table th,
+.lab-table td {
+  text-align: start;
+  padding: 0.55rem 0.7rem;
+  border-block-end: 1px solid var(--cloudy);
+  font-size: 1.02rem;
+}
+
+.lab-table thead th {
+  background: var(--cloudy);
+  color: var(--aegean);
+  font-weight: 700;
+}
+
+/* Group header rows in green, spanning all columns. */
+.lab-group__cell {
+  background: #2e7d32;
+  color: var(--white);
+  font-weight: 700;
+}
+
+/* Each data row carries a dark left border. */
+.lab-data-row .lab-name {
+  border-inline-start: 4px solid var(--aegean);
+  font-weight: 600;
+}
+
+/* Out-of-range values flagged. */
+.lab-out {
+  color: #c0392b;
+  font-weight: 700;
+}
+
+.trend {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.trend--improving {
+  color: #2e7d32;
+}
+
+.trend--worsening {
+  color: #c0392b;
+}
+
+.trend--stable {
+  color: var(--metal);
 }
 
 /* ----------------------------------------------------------------------------

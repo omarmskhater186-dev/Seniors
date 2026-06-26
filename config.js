@@ -177,4 +177,59 @@ window.SeniorsConfig = {
     { id: "decreased", symbol: "↓", en: "Decreased", ar: "إنقاص الجرعة", tone: "neg" },
     { id: "stopped", symbol: "✕", en: "Stopped", ar: "إيقاف", tone: "neg" },
   ],
+
+  // Stage 5 — Laboratory catalog: groups → tests with units and normal ranges.
+  // `low`/`high` are the reference range used to flag out-of-range values and
+  // to judge trend direction (improving/worsening). Omit them for free values.
+  labs: [
+    {
+      id: "cbc", en: "Complete blood count", ar: "تعداد الدم الكامل",
+      tests: [
+        { id: "hb", en: "Haemoglobin", ar: "الهيموغلوبين", unit: "g/dL", low: 12, high: 17 },
+        { id: "wbc", en: "White cell count", ar: "كريات الدم البيضاء", unit: "10⁹/L", low: 4, high: 11 },
+        { id: "plt", en: "Platelets", ar: "الصفائح", unit: "10⁹/L", low: 150, high: 400 },
+      ],
+    },
+    {
+      id: "renal", en: "Renal function", ar: "وظائف الكلى",
+      tests: [
+        { id: "creat", en: "Creatinine", ar: "الكرياتينين", unit: "mg/dL", low: 0.6, high: 1.3 },
+        { id: "urea", en: "Urea", ar: "اليوريا", unit: "mg/dL", low: 15, high: 45 },
+        { id: "egfr", en: "eGFR", ar: "معدل الترشيح الكبيبي", unit: "mL/min", low: 60, high: 120 },
+        { id: "k", en: "Potassium", ar: "البوتاسيوم", unit: "mmol/L", low: 3.5, high: 5.1 },
+        { id: "na", en: "Sodium", ar: "الصوديوم", unit: "mmol/L", low: 135, high: 145 },
+      ],
+    },
+    {
+      id: "glyc", en: "Glycaemic control", ar: "ضبط السكري",
+      tests: [
+        { id: "hba1c", en: "HbA1c", ar: "السكر التراكمي", unit: "%", low: 4, high: 6.5 },
+        { id: "fbg", en: "Fasting glucose", ar: "سكر صائم", unit: "mg/dL", low: 70, high: 110 },
+      ],
+    },
+    {
+      id: "lipids", en: "Lipids", ar: "الدهون",
+      tests: [
+        { id: "ldl", en: "LDL cholesterol", ar: "الكوليسترول الضار", unit: "mg/dL", low: 0, high: 100 },
+        { id: "hdl", en: "HDL cholesterol", ar: "الكوليسترول النافع", unit: "mg/dL", low: 40, high: 200 },
+        { id: "tg", en: "Triglycerides", ar: "الدهون الثلاثية", unit: "mg/dL", low: 0, high: 150 },
+      ],
+    },
+    {
+      id: "liver", en: "Liver function", ar: "وظائف الكبد",
+      tests: [
+        { id: "alt", en: "ALT", ar: "ALT", unit: "U/L", low: 0, high: 40 },
+        { id: "ast", en: "AST", ar: "AST", unit: "U/L", low: 0, high: 40 },
+        { id: "alb", en: "Albumin", ar: "الألبومين", unit: "g/dL", low: 3.5, high: 5 },
+      ],
+    },
+    {
+      id: "other", en: "Other", ar: "أخرى",
+      tests: [
+        { id: "tsh", en: "TSH", ar: "الهرمون المحفز للغدة الدرقية", unit: "mIU/L", low: 0.4, high: 4 },
+        { id: "vitd", en: "Vitamin D", ar: "فيتامين د", unit: "ng/mL", low: 30, high: 100 },
+        { id: "b12", en: "Vitamin B12", ar: "فيتامين ب12", unit: "pg/mL", low: 200, high: 900 },
+      ],
+    },
+  ],
 };
