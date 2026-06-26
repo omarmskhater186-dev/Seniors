@@ -40,6 +40,7 @@
       noMeds: "No medications recorded.",
       noNotes: "No notes.",
       notProvided: "—",
+      exportWord: "Download Word record",
     },
     ar: {
       appTitle: "سينيورز ميد",
@@ -67,6 +68,7 @@
       noMeds: "لا توجد أدوية مسجلة.",
       noNotes: "لا توجد ملاحظات.",
       notProvided: "—",
+      exportWord: "تنزيل سجل Word",
     },
   };
 
@@ -291,7 +293,49 @@
       medsBlock,
     ]);
 
-    return el("article", { class: "record" }, [head, info, notesBlock, medsSection]);
+    // Export: download this record as a Word (.docx) file.
+    const exportBtn = el("button", {
+      class: "btn btn-secondary btn-export",
+      attrs: { type: "button", "data-i18n": "exportWord" },
+      text: t("exportWord"),
+    });
+    exportBtn.addEventListener("click", () => {
+      try {
+        window.SeniorsExport.downloadDocx(visit, buildExportLabels(visit));
+      } catch (err) {
+        console.error("Word export failed:", err);
+        alert(t("exportWord") + " — error.");
+      }
+    });
+    const actions = el("div", { class: "record-actions" }, [exportBtn]);
+
+    return el("article", { class: "record" }, [head, info, notesBlock, medsSection, actions]);
+  }
+
+  // Build the localized labels/values the .docx exporter needs. Keeping this in
+  // app.js means translation + date formatting stay in one place.
+  function buildExportLabels(visit) {
+    const name = visit.name || t("notProvided");
+    const ageValue =
+      visit.age !== "" && visit.age != null ? `${visit.age} ${t("years")}` : t("notProvided");
+    return {
+      lang: state.lang,
+      dir: state.lang === "ar" ? "rtl" : "ltr",
+      headerTitle: `${t("recordHeading")} — ${name}`,
+      name,
+      ageLabel: t("age"),
+      ageValue,
+      dateLabel: t("visitDate"),
+      dateValue: formatDate(visit.date),
+      generatedText: `${t("generatedOn")}: ${formatTimestamp(visit.createdAt)}`,
+      notesLabel: t("notes"),
+      notesValue: visit.notes || t("noNotes"),
+      medsLabel: t("medications"),
+      drugCol: t("medColDrug"),
+      dosingCol: t("medColDosing"),
+      noMeds: t("noMeds"),
+      notProvided: t("notProvided"),
+    };
   }
 
   function renderInto(container, node) {

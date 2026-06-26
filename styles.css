@@ -294,6 +294,12 @@ textarea:focus {
   background: var(--white);
 }
 
+.record-actions {
+  margin-block-start: 1.25rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid var(--cloudy);
+}
+
 .record-head {
   display: flex;
   flex-wrap: wrap;
