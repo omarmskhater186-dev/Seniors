@@ -25,8 +25,11 @@
       visitDate: "Date of visit",
       sectionProblems: "Problem list",
       sectionGeriatric: "Geriatric assessment",
+      sectionResume: "Case résumé",
       sectionCurrent: "Current situation",
       sectionVitals: "Vital signs",
+      addAlert: "+ Add alert",
+      alertText: "Alert (one short line)",
       sectionLabs: "Laboratory investigations",
       sectionAlerts: "Alerts",
       sectionAssessment: "Assessment",
@@ -71,8 +74,11 @@
       visitDate: "تاريخ الزيارة",
       sectionProblems: "قائمة المشكلات",
       sectionGeriatric: "تقييم المسنّين",
+      sectionResume: "ملخص الحالة",
       sectionCurrent: "الوضع الحالي",
       sectionVitals: "العلامات الحيوية",
+      addAlert: "+ إضافة تنبيه",
+      alertText: "تنبيه (سطر واحد قصير)",
       sectionLabs: "الفحوصات المخبرية",
       sectionAlerts: "التنبيهات",
       sectionAssessment: "التقييم",
@@ -175,6 +181,7 @@
     buildVitalsInputs();
     buildGeriatricInputs();
     buildLabInputs();
+    buildAlertInputs();
     buildProblemChips();
 
     if (state.lastRecord) {
@@ -246,6 +253,57 @@
         ])
       );
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Alert input rows (tiered)
+  // ---------------------------------------------------------------------------
+  function makeAlertRow(data) {
+    data = data || {};
+    const tierSel = el("select", { class: "alert-tier" });
+    (CFG.alertTiers || []).forEach((tr) => {
+      tierSel.appendChild(
+        el("option", { text: `${tr.emoji} ${cfgLabel(tr)}`, attrs: { value: tr.id } })
+      );
+    });
+    if (data.tier) tierSel.value = data.tier;
+
+    const textInput = el("input", {
+      class: "alert-text",
+      attrs: { type: "text", autocomplete: "off", "aria-label": t("alertText") },
+    });
+    if (data.text) textInput.value = data.text;
+
+    const removeBtn = el("button", {
+      class: "btn btn-remove",
+      attrs: { type: "button", "data-i18n": "removeMed" },
+      text: t("removeMed"),
+    });
+    const row = el("div", { class: "alert-row" }, [
+      el("div", { class: "field" }, [tierSel]),
+      el("div", { class: "field" }, [textInput]),
+      el("div", { class: "med-row__remove" }, [removeBtn]),
+    ]);
+    removeBtn.addEventListener("click", () => row.remove());
+    return row;
+  }
+
+  function readAlertRows() {
+    const rows = [];
+    document.querySelectorAll("#alertRows .alert-row").forEach((r) => {
+      const text = r.querySelector(".alert-text").value.trim();
+      if (text) rows.push({ tier: r.querySelector(".alert-tier").value, text });
+    });
+    return rows;
+  }
+
+  function buildAlertInputs() {
+    const wrap = $("alertRows");
+    if (!wrap) return;
+    const existing = readAlertRows();
+    wrap.innerHTML = "";
+    if (!existing.length) wrap.appendChild(makeAlertRow());
+    else existing.forEach((d) => wrap.appendChild(makeAlertRow(d)));
   }
 
   // ---------------------------------------------------------------------------
@@ -461,6 +519,7 @@
     });
 
     const labs = readLabRows().filter((r) => r.testId && r.value);
+    const alerts = readAlertRows();
 
     const problems = [];
     document.querySelectorAll("#problemChips .chip").forEach((ch) => {
@@ -476,11 +535,13 @@
       name: $("patientName").value.trim(),
       age: $("age").value.trim(),
       date: $("visitDate").value, // YYYY-MM-DD or ""
+      caseResume: $("caseResume").value.trim(),
       problems,
       geriatric,
       currentSituation: $("currentSituation").value.trim(),
       vitals,
       labs,
+      alerts,
       assessment: $("assessment").value.trim(),
       actionPlan: $("actionPlan").value.trim(),
       meds,
@@ -491,9 +552,11 @@
     $("visitForm").reset();
     $("problemChips").innerHTML = "";
     $("labRows").innerHTML = "";
+    $("alertRows").innerHTML = "";
     buildVitalsInputs();
     buildGeriatricInputs();
     buildLabInputs();
+    buildAlertInputs();
     buildProblemChips();
     $("medsList").innerHTML = "";
     $("medsList").appendChild(buildMedRow());
@@ -566,6 +629,31 @@
           label = pr.text;
         }
         return el("span", { class: "chip chip--on", text: label });
+      })
+    );
+  }
+
+  function resumeBanner(visit) {
+    if (!visit.caseResume) return null;
+    return el("div", { class: "case-resume" }, [
+      el("p", { class: "case-resume__label", text: t("sectionResume") }),
+      el("p", { class: "case-resume__text", text: visit.caseResume }),
+    ]);
+  }
+
+  function alertsBlock(visit) {
+    const alerts = visit.alerts || [];
+    if (!alerts.length) return null;
+    return el(
+      "div",
+      { class: "alert-list" },
+      alerts.map((a) => {
+        const tier = (CFG.alertTiers || []).find((x) => x.id === a.tier);
+        const emoji = tier ? tier.emoji : "•";
+        return el("div", { class: `alert alert--${a.tier}` }, [
+          el("span", { class: "alert__icon", text: emoji, attrs: { "aria-hidden": "true" } }),
+          el("span", { class: "alert__text", text: a.text }),
+        ]);
       })
     );
   }
@@ -784,7 +872,7 @@
       recordSection("sectionCurrent", textBlock(visit.currentSituation || visit.notes)),
       recordSection("sectionVitals", vitalsBlock(visit)),
       recordSection("sectionLabs", labsBlock(visit)),
-      recordSection("sectionAlerts", null), // Stage 6
+      recordSection("sectionAlerts", alertsBlock(visit)),
       recordSection("sectionAssessment", textBlock(visit.assessment)),
       recordSection("sectionActionPlan", textBlock(visit.actionPlan)),
       recordSection("medications", medsBlock(visit)),
@@ -806,7 +894,8 @@
     });
     const actions = el("div", { class: "record-actions" }, [exportBtn]);
 
-    return el("article", { class: "record" }, [head, info].concat(sections, [actions]));
+    const top = [resumeBanner(visit), head, info].filter(Boolean);
+    return el("article", { class: "record" }, top.concat(sections, [actions]));
   }
 
   // Localized labels/values for the .docx exporter (single source of truth).
@@ -901,11 +990,16 @@
     buildVitalsInputs();
     buildGeriatricInputs();
     buildLabInputs();
+    buildAlertInputs();
     buildProblemChips();
     $("medsList").appendChild(buildMedRow());
 
     $("addLab").addEventListener("click", () => {
       $("labRows").appendChild(makeLabRow());
+    });
+
+    $("addAlert").addEventListener("click", () => {
+      $("alertRows").appendChild(makeAlertRow());
     });
 
     $("addProblem").addEventListener("click", addCustomProblem);

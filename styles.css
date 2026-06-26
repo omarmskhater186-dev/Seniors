@@ -440,12 +440,14 @@ select:focus {
     margin-block-end: 0;
   }
 
-  .lab-row {
+  .lab-row,
+  .alert-row {
     grid-template-columns: 1fr;
     align-items: stretch;
   }
 
-  .lab-row .field {
+  .lab-row .field,
+  .alert-row .field {
     margin-block-end: 0;
   }
 
@@ -562,6 +564,68 @@ select:focus {
 
 .trend--stable {
   color: var(--metal);
+}
+
+/* ----------------------------------------------------------------------------
+   Alerts (input rows + tiered record display) + Case résumé banner
+   ---------------------------------------------------------------------------- */
+.alert-row {
+  display: grid;
+  grid-template-columns: 200px 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  margin-block-end: 1rem;
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.alert {
+  display: flex;
+  gap: 0.55rem;
+  align-items: baseline;
+  padding: 0.55rem 0.8rem;
+  border-inline-start: 6px solid var(--metal);
+  background: #f6f9fa;
+  border-radius: 8px;
+  font-size: 1.05rem;
+}
+
+.alert--red {
+  border-inline-start-color: #c0392b;
+}
+.alert--amber {
+  border-inline-start-color: #e0a800;
+}
+.alert--green {
+  border-inline-start-color: #2e7d32;
+}
+
+.case-resume {
+  background: #ecfafb;
+  border: 1px solid var(--baby);
+  border-inline-start: 7px solid var(--baby);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-block-end: 1.25rem;
+}
+
+.case-resume__label {
+  color: var(--oceana);
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0 0 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.case-resume__text {
+  margin: 0;
+  font-size: 1.15rem;
+  white-space: pre-wrap;
 }
 
 /* ----------------------------------------------------------------------------

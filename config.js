@@ -178,6 +178,13 @@ window.SeniorsConfig = {
     { id: "stopped", symbol: "✕", en: "Stopped", ar: "إيقاف", tone: "neg" },
   ],
 
+  // Stage 6 — Alert tiers (one short line each).
+  alertTiers: [
+    { id: "red", emoji: "🔴", en: "Urgent", ar: "عاجل" },
+    { id: "amber", emoji: "🟡", en: "Needs attention", ar: "يحتاج انتباه" },
+    { id: "green", emoji: "🟢", en: "Reassuring", ar: "مطمئن" },
+  ],
+
   // Stage 5 — Laboratory catalog: groups → tests with units and normal ranges.
   // `low`/`high` are the reference range used to flag out-of-range values and
   // to judge trend direction (improving/worsening). Omit them for free values.
