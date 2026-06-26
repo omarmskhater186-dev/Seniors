@@ -979,28 +979,130 @@
     return view;
   }
 
-  // Localized labels/values for the .docx exporter (single source of truth).
+  // Lab data shaped for the exporter (mirrors labsBlock aggregation).
+  function buildLabsExport(visit) {
+    const entries = (visit.labs || []).filter((e) => e.testId && e.value && String(e.value).trim());
+    if (!entries.length) return null;
+    const dates = Array.from(new Set(entries.map((e) => e.date || ""))).sort();
+    const byTest = {};
+    entries.forEach((e) => {
+      (byTest[e.testId] = byTest[e.testId] || {})[e.date || ""] = String(e.value).trim();
+    });
+    const groups = [];
+    (CFG.labs || []).forEach((group) => {
+      const tests = (group.tests || []).filter((tst) => byTest[tst.id]);
+      if (!tests.length) return;
+      const rows = tests.map((tst) => {
+        const ordered = [];
+        const cells = dates.map((d) => {
+          const v = byTest[tst.id][d];
+          if (v == null || v === "") return { value: "" };
+          const num = parseFloat(v);
+          let out = false;
+          if (isFinite(num)) {
+            ordered.push(num);
+            out = (tst.low != null && num < tst.low) || (tst.high != null && num > tst.high);
+          }
+          return { value: v, out };
+        });
+        return {
+          name: cfgLabel(tst) + (tst.unit ? ` (${tst.unit})` : ""),
+          cells,
+          trend: computeTrend(tst, ordered),
+        };
+      });
+      groups.push({ name: cfgLabel(group), rows });
+    });
+    return {
+      dates: dates.map((d) => ({ label: d ? formatDate(d) : t("notProvided") })),
+      testLabel: t("labTest"),
+      trendLabel: t("labTrend"),
+      groups,
+    };
+  }
+
+  // Full localized payload for the .docx exporter (single source of truth).
   function buildExportLabels(visit) {
     const name = visit.name || t("notProvided");
     const ageValue =
       visit.age !== "" && visit.age != null ? `${visit.age} ${t("years")}` : t("notProvided");
+
+    const problems = (visit.problems || []).map((pr) => {
+      if (pr.id) {
+        const it = (CFG.problems || []).find((x) => x.id === pr.id);
+        return it ? cfgLabel(it) : pr.id;
+      }
+      return pr.text;
+    });
+
+    const geriatric = (CFG.geriatric || [])
+      .filter((f) => (visit.geriatric || {})[f.id])
+      .map((f) => {
+        let val = visit.geriatric[f.id];
+        if (f.type === "select") {
+          const o = (f.options || []).find((x) => x.id === val);
+          val = o ? cfgLabel(o) : val;
+        }
+        return { k: cfgLabel(f), v: val };
+      });
+
+    const vitals = (CFG.vitals || [])
+      .filter((v) => (visit.vitals || {})[v.id])
+      .map((v) => ({ k: cfgLabel(v), v: visit.vitals[v.id] + (v.unit ? ` ${v.unit}` : "") }));
+
+    const alerts = (visit.alerts || []).map((a) => {
+      const tier = (CFG.alertTiers || []).find((x) => x.id === a.tier);
+      return { tier: a.tier, emoji: tier ? tier.emoji : "", text: a.text };
+    });
+
+    const mapMed = (m) => {
+      const c = (CFG.medCodes || []).find((x) => x.id === m.code);
+      const badge =
+        c && c.tone !== "neutral"
+          ? { text: (c.symbol ? c.symbol + " " : "") + cfgLabel(c), tone: c.tone }
+          : null;
+      return { badge, drug: m.drug || t("notProvided"), dosing: m.dosing || t("notProvided") };
+    };
+    const activeMeds = (visit.meds || []).filter((m) => m.code !== "stopped").map(mapMed);
+    const stoppedMeds = (visit.meds || []).filter((m) => m.code === "stopped").map(mapMed);
+
     return {
       lang: state.lang,
       dir: state.lang === "ar" ? "rtl" : "ltr",
       headerTitle: `${t("recordHeading")} — ${name}`,
       name,
-      ageLabel: t("age"),
-      ageValue,
-      dateLabel: t("visitDate"),
-      dateValue: formatDate(visit.date),
       generatedText: `${t("generatedOn")}: ${formatTimestamp(visit.createdAt)}`,
-      notesLabel: t("sectionCurrent"),
-      notesValue: visit.currentSituation || visit.notes || "",
-      medsLabel: t("medications"),
-      drugCol: t("medColDrug"),
-      dosingCol: t("medColDosing"),
-      noMeds: t("noMeds"),
-      notProvided: t("notProvided"),
+      noneRecorded: t("noneRecorded"),
+      patient: {
+        ageLabel: t("age"),
+        ageValue,
+        dateLabel: t("visitDate"),
+        dateValue: formatDate(visit.date),
+      },
+      resume: visit.caseResume ? { label: t("sectionResume"), text: visit.caseResume } : null,
+      sections: [
+        { type: "chips", title: t("sectionProblems"), items: problems },
+        { type: "pairs", title: t("sectionGeriatric"), pairs: geriatric },
+        { type: "text", title: t("sectionCurrent"), text: visit.currentSituation || visit.notes || "" },
+        { type: "pairs", title: t("sectionVitals"), pairs: vitals },
+        { type: "labs", title: t("sectionLabs"), labs: buildLabsExport(visit) },
+        { type: "alerts", title: t("sectionAlerts"), items: alerts },
+        { type: "text", title: t("sectionAssessment"), text: visit.assessment },
+        { type: "text", title: t("sectionActionPlan"), text: visit.actionPlan },
+        {
+          type: "meds",
+          title: t("medications"),
+          active: activeMeds,
+          stopped: stoppedMeds,
+          stoppedLabel: t("stoppedThisVisit"),
+          drugCol: t("medColDrug"),
+          dosingCol: t("medColDosing"),
+        },
+      ],
+      worklist:
+        visit.verification && visit.verification.length
+          ? { head: t("worklistHead"), warn: t("worklistWarn"), items: visit.verification.slice() }
+          : null,
     };
   }
 
