@@ -157,6 +157,7 @@
 
     // Rebuild config-driven inputs so their labels follow the new language.
     buildVitalsInputs();
+    buildGeriatricInputs();
     buildProblemChips();
 
     if (state.lastRecord) {
@@ -189,6 +190,44 @@
         input,
       ]);
       grid.appendChild(field);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Geriatric assessment inputs (built from config)
+  // ---------------------------------------------------------------------------
+  function buildGeriatricInputs() {
+    const grid = $("geriatricGrid");
+    if (!grid) return;
+    const prev = {};
+    grid.querySelectorAll("[data-geriatric]").forEach((c) => {
+      prev[c.getAttribute("data-geriatric")] = c.value;
+    });
+
+    grid.innerHTML = "";
+    (CFG.geriatric || []).forEach((f) => {
+      let control;
+      if (f.type === "select") {
+        control = el("select", {
+          attrs: { id: `ger-${f.id}`, "data-geriatric": f.id },
+        });
+        control.appendChild(el("option", { text: t("notProvided"), attrs: { value: "" } }));
+        (f.options || []).forEach((o) => {
+          control.appendChild(el("option", { text: cfgLabel(o), attrs: { value: o.id } }));
+        });
+      } else {
+        control = el("input", {
+          attrs: { id: `ger-${f.id}`, type: "text", autocomplete: "off", "data-geriatric": f.id },
+        });
+      }
+      if (prev[f.id] != null) control.value = prev[f.id];
+
+      grid.appendChild(
+        el("div", { class: "field" }, [
+          el("label", { attrs: { for: `ger-${f.id}` }, text: cfgLabel(f) }),
+          control,
+        ])
+      );
     });
   }
 
@@ -309,6 +348,12 @@
       if (val) vitals[i.getAttribute("data-vital")] = val;
     });
 
+    const geriatric = {};
+    document.querySelectorAll("#geriatricGrid [data-geriatric]").forEach((c) => {
+      const val = c.value.trim();
+      if (val) geriatric[c.getAttribute("data-geriatric")] = val;
+    });
+
     const problems = [];
     document.querySelectorAll("#problemChips .chip").forEach((ch) => {
       if (ch.getAttribute("aria-pressed") !== "true") return;
@@ -324,6 +369,7 @@
       age: $("age").value.trim(),
       date: $("visitDate").value, // YYYY-MM-DD or ""
       problems,
+      geriatric,
       currentSituation: $("currentSituation").value.trim(),
       vitals,
       assessment: $("assessment").value.trim(),
@@ -336,6 +382,7 @@
     $("visitForm").reset();
     $("problemChips").innerHTML = "";
     buildVitalsInputs();
+    buildGeriatricInputs();
     buildProblemChips();
     $("medsList").innerHTML = "";
     $("medsList").appendChild(buildMedRow());
@@ -412,6 +459,27 @@
     );
   }
 
+  function geriatricBlock(visit) {
+    const g = visit.geriatric || {};
+    const items = (CFG.geriatric || []).filter((f) => g[f.id]);
+    if (!items.length) return null;
+    return el(
+      "dl",
+      { class: "rec-grid" },
+      items.map((f) => {
+        let value = g[f.id];
+        if (f.type === "select") {
+          const opt = (f.options || []).find((o) => o.id === value);
+          value = opt ? cfgLabel(opt) : value;
+        }
+        return el("div", { class: "info-pair" }, [
+          el("dt", { text: cfgLabel(f) }),
+          el("dd", { text: value }),
+        ]);
+      })
+    );
+  }
+
   function vitalsBlock(visit) {
     const vitals = visit.vitals || {};
     const items = (CFG.vitals || []).filter((v) => vitals[v.id]);
@@ -469,7 +537,7 @@
     // Ordered sections. Empty ones render "None recorded."
     const sections = [
       recordSection("sectionProblems", problemsBlock(visit)),
-      recordSection("sectionGeriatric", null), // Stage 3
+      recordSection("sectionGeriatric", geriatricBlock(visit)),
       recordSection("sectionCurrent", textBlock(visit.currentSituation || visit.notes)),
       recordSection("sectionVitals", vitalsBlock(visit)),
       recordSection("sectionLabs", null), // Stage 5
@@ -588,6 +656,7 @@
     applyLanguage(saved === "ar" ? "ar" : "en");
 
     buildVitalsInputs();
+    buildGeriatricInputs();
     buildProblemChips();
     $("medsList").appendChild(buildMedRow());
 

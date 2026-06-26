@@ -149,7 +149,8 @@ legend {
 }
 
 input,
-textarea {
+textarea,
+select {
   font-family: inherit;
   font-size: 1.05rem;
   color: var(--aegean);
@@ -173,7 +174,8 @@ textarea::placeholder {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: 3px solid var(--oceana);
   outline-offset: 1px;
   border-color: var(--oceana);
