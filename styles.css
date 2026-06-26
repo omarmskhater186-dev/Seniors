@@ -409,4 +409,75 @@ textarea:focus {
   .card {
     padding: 1.1rem;
   }
+
+  .vitals-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Form sections (fieldsets) + vitals grid
+   ---------------------------------------------------------------------------- */
+.form-section {
+  border: 1px solid var(--cloudy);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem 0.5rem;
+  margin-block: 0 var(--gap);
+}
+
+.form-section > legend {
+  padding-inline: 0.5rem;
+  color: var(--aegean);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.vitals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.vitals-grid .field {
+  margin-block-end: 0.5rem;
+}
+
+/* ----------------------------------------------------------------------------
+   Record sections (the generated/saved record)
+   ---------------------------------------------------------------------------- */
+.rec-section {
+  margin-block: 1.1rem;
+}
+
+.rec-section__title {
+  color: var(--aegean);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.4rem;
+  padding-block-end: 0.3rem;
+  border-block-end: 2px solid var(--baby);
+}
+
+.rec-text {
+  margin: 0;
+  font-size: 1.1rem;
+  white-space: pre-wrap; /* preserve line breaks in free-text */
+}
+
+.rec-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin: 0;
+}
+
+.rec-grid .info-pair dt {
+  color: var(--oceana);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.rec-grid .info-pair dd {
+  margin: 0.1rem 0 0;
+  font-size: 1.1rem;
 }

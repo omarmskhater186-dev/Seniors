@@ -47,28 +47,57 @@
       <h2 id="visitHeading" data-i18n="visitHeading">New visit</h2>
 
       <form id="visitForm" novalidate>
-        <div class="grid-2">
+        <!-- Patient -->
+        <fieldset class="form-section">
+          <legend data-i18n="sectionPatient">Patient</legend>
+          <div class="grid-2">
+            <div class="field">
+              <label for="patientName" data-i18n="patientName">Patient name</label>
+              <input id="patientName" name="patientName" type="text" autocomplete="off" required />
+            </div>
+            <div class="field field--age">
+              <label for="age" data-i18n="age">Age</label>
+              <input id="age" name="age" type="number" min="0" max="130" inputmode="numeric" />
+            </div>
+          </div>
           <div class="field">
-            <label for="patientName" data-i18n="patientName">Patient name</label>
-            <input id="patientName" name="patientName" type="text" autocomplete="off" required />
+            <label for="visitDate" data-i18n="visitDate">Date of visit</label>
+            <input id="visitDate" name="visitDate" type="date" />
           </div>
-          <div class="field field--age">
-            <label for="age" data-i18n="age">Age</label>
-            <input id="age" name="age" type="number" min="0" max="130" inputmode="numeric" />
+        </fieldset>
+
+        <!-- Current situation -->
+        <fieldset class="form-section">
+          <legend data-i18n="sectionCurrent">Current situation</legend>
+          <div class="field">
+            <textarea id="currentSituation" rows="4" aria-label="Current situation"></textarea>
           </div>
-        </div>
+        </fieldset>
 
-        <div class="field">
-          <label for="visitDate" data-i18n="visitDate">Date of visit</label>
-          <input id="visitDate" name="visitDate" type="date" />
-        </div>
+        <!-- Vital signs (built from config) -->
+        <fieldset class="form-section">
+          <legend data-i18n="sectionVitals">Vital signs</legend>
+          <div id="vitalsGrid" class="vitals-grid"></div>
+        </fieldset>
 
-        <div class="field">
-          <label for="notes" data-i18n="notes">Visit notes</label>
-          <textarea id="notes" name="notes" rows="4"></textarea>
-        </div>
+        <!-- Assessment -->
+        <fieldset class="form-section">
+          <legend data-i18n="sectionAssessment">Assessment</legend>
+          <div class="field">
+            <textarea id="assessment" rows="3" aria-label="Assessment"></textarea>
+          </div>
+        </fieldset>
 
-        <fieldset class="meds">
+        <!-- Action plan -->
+        <fieldset class="form-section">
+          <legend data-i18n="sectionActionPlan">Action plan</legend>
+          <div class="field">
+            <textarea id="actionPlan" rows="3" aria-label="Action plan"></textarea>
+          </div>
+        </fieldset>
+
+        <!-- Medications -->
+        <fieldset class="meds form-section">
           <legend data-i18n="medications">Medications</legend>
           <div id="medsList" class="meds-list"></div>
           <button id="addMed" class="btn btn-secondary" type="button" data-i18n="addMed">
@@ -100,6 +129,7 @@
     </section>
   </main>
 
+  <script src="config.js"></script>
   <script src="db.js"></script>
   <script src="export.js"></script>
   <script src="app.js"></script>
