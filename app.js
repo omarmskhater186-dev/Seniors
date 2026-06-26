@@ -48,6 +48,8 @@
       generatedOn: "Generated",
       medColDrug: "Drug",
       medColDosing: "Dosing",
+      medStatus: "Status",
+      stoppedThisVisit: "Stopped this visit",
       noMeds: "No medications recorded.",
       notProvided: "—",
       exportWord: "Download Word record",
@@ -86,6 +88,8 @@
       generatedOn: "أُنشئ في",
       medColDrug: "الدواء",
       medColDosing: "الجرعة",
+      medStatus: "الحالة",
+      stoppedThisVisit: "أُوقفت هذه الزيارة",
       noMeds: "لا توجد أدوية مسجلة.",
       notProvided: "—",
       exportWord: "تنزيل سجل Word",
@@ -313,6 +317,21 @@
       attrs: { id: `dose-${id}`, type: "text", dir: "rtl", lang: "ar" },
     });
 
+    // Change-status selector (new / unchanged / increased / decreased / stopped).
+    const codeLabel = el("label", {
+      attrs: { for: `code-${id}`, "data-i18n": "medStatus" },
+      text: t("medStatus"),
+    });
+    const codeSelect = el("select", {
+      class: "med-code",
+      attrs: { id: `code-${id}`, "data-medcode": "" },
+    });
+    (CFG.medCodes || []).forEach((c) => {
+      const label = (c.symbol ? c.symbol + " " : "") + cfgLabel(c);
+      codeSelect.appendChild(el("option", { text: label, attrs: { value: c.id } }));
+    });
+    codeSelect.value = "unchanged";
+
     const removeBtn = el("button", {
       class: "btn btn-remove",
       attrs: { type: "button", "data-i18n": "removeMed" },
@@ -323,6 +342,7 @@
     const row = el("div", { class: "med-row" }, [
       el("div", { class: "field" }, [drugLabel, drugInput]),
       el("div", { class: "field" }, [doseLabel, doseInput]),
+      el("div", { class: "field" }, [codeLabel, codeSelect]),
       el("div", { class: "med-row__remove" }, [removeBtn]),
     ]);
 
@@ -339,7 +359,9 @@
       .forEach((row) => {
         const drug = row.querySelector(".drug").value.trim();
         const dosing = row.querySelector(".dosing").value.trim();
-        if (drug || dosing) meds.push({ drug, dosing });
+        const codeEl = row.querySelector(".med-code");
+        const code = codeEl ? codeEl.value : "unchanged";
+        if (drug || dosing) meds.push({ drug, dosing, code });
       });
 
     const vitals = {};
@@ -496,26 +518,57 @@
     );
   }
 
-  function medsBlock(visit) {
-    if (!visit.meds || !visit.meds.length) return null;
+  function medBadge(code) {
+    const c = (CFG.medCodes || []).find((x) => x.id === code);
+    if (!c || c.tone === "neutral") return null;
+    return el("span", {
+      class: `med-badge med-badge--${c.tone}`,
+      text: (c.symbol ? c.symbol + " " : "") + cfgLabel(c),
+    });
+  }
+
+  function medTable(list, stopped) {
     const thead = el("thead", {}, [
       el("tr", {}, [
         el("th", { text: t("medColDrug") }),
         el("th", { text: t("medColDosing") }),
       ]),
     ]);
-    const rows = visit.meds.map((m) =>
-      el("tr", {}, [
-        el("td", { class: "med-drug", text: m.drug || t("notProvided") }),
-        // Dosing cell is always Arabic, right-to-left, shown verbatim.
-        el("td", {
-          class: "med-dose arabic",
-          text: m.dosing || t("notProvided"),
-          attrs: { dir: "rtl", lang: "ar" },
-        }),
-      ])
-    );
-    return el("table", { class: "med-table" }, [thead, el("tbody", {}, rows)]);
+    const rows = list.map((m) => {
+      const drugCell = el("td", { class: "med-drug" });
+      const badge = medBadge(m.code);
+      if (badge) {
+        drugCell.appendChild(badge);
+        drugCell.appendChild(document.createTextNode(" "));
+      }
+      drugCell.appendChild(document.createTextNode(m.drug || t("notProvided")));
+      // Dosing cell is always Arabic, right-to-left, shown verbatim.
+      const doseCell = el("td", {
+        class: "med-dose arabic",
+        text: m.dosing || t("notProvided"),
+        attrs: { dir: "rtl", lang: "ar" },
+      });
+      return el("tr", {}, [drugCell, doseCell]);
+    });
+    return el("table", { class: "med-table" + (stopped ? " med-table--stopped" : "") }, [
+      thead,
+      el("tbody", {}, rows),
+    ]);
+  }
+
+  function medsBlock(visit) {
+    const meds = visit.meds || [];
+    if (!meds.length) return null;
+    const active = meds.filter((m) => m.code !== "stopped");
+    const stopped = meds.filter((m) => m.code === "stopped");
+
+    const wrap = el("div", { class: "rec-meds" });
+    if (active.length) wrap.appendChild(medTable(active, false));
+    if (stopped.length) {
+      wrap.appendChild(el("h5", { class: "med-stopped-title", text: t("stoppedThisVisit") }));
+      wrap.appendChild(medTable(stopped, true));
+    }
+    return wrap;
   }
 
   function buildRecordCard(visit) {

@@ -167,4 +167,14 @@ window.SeniorsConfig = {
       ],
     },
   ],
+
+  // Stage 4 — Medication change codes (badges shown beside each drug).
+  // tone: "pos" (new/increase), "neg" (decrease/stop), "neutral" (unchanged → no badge).
+  medCodes: [
+    { id: "new", symbol: "✱", en: "New", ar: "جديد", tone: "pos" },
+    { id: "unchanged", symbol: "", en: "Unchanged", ar: "بدون تغيير", tone: "neutral" },
+    { id: "increased", symbol: "↑", en: "Increased", ar: "زيادة الجرعة", tone: "pos" },
+    { id: "decreased", symbol: "↓", en: "Decreased", ar: "إنقاص الجرعة", tone: "neg" },
+    { id: "stopped", symbol: "✕", en: "Stopped", ar: "إيقاف", tone: "neg" },
+  ],
 };
