@@ -155,6 +155,26 @@
           </button>
         </fieldset>
 
+        <!-- Attachments (files/images, stored as compressed blobs) -->
+        <fieldset class="form-section">
+          <legend data-i18n="sectionAttachments">Attachments</legend>
+          <input
+            id="attachInput"
+            class="visually-hidden"
+            type="file"
+            accept="image/jpeg,image/png,application/pdf"
+            multiple
+          />
+          <label class="btn btn-secondary attach-add" for="attachInput" data-i18n="attachAdd">
+            Add files
+          </label>
+          <p class="attach-hint muted" data-i18n="attachHint">
+            Images (JPG/PNG) or PDF · up to 10 MB each · 20 per visit
+          </p>
+          <p id="attachMsg" class="form-error" role="alert" hidden></p>
+          <div id="attachList" class="attach-grid"></div>
+        </fieldset>
+
         <!-- Verification worklist (internal — not part of the patient record) -->
         <fieldset class="form-section form-section--worklist">
           <legend data-i18n="sectionWorklist">Verification worklist (internal)</legend>
@@ -190,6 +210,7 @@
 
   <script src="config.js"></script>
   <script src="db.js"></script>
+  <script src="uploads.js"></script>
   <script src="export.js"></script>
   <script src="app.js"></script>
 </body>

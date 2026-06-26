@@ -62,6 +62,15 @@
       noMeds: "No medications recorded.",
       notProvided: "—",
       exportWord: "Download Word record",
+      sectionAttachments: "Attachments",
+      attachAdd: "Add files",
+      attachHint: "Images (JPG/PNG) or PDF · up to 10 MB each · 20 per visit",
+      attachOpen: "Open file",
+      attachDelete: "Delete",
+      fileTooLarge: "too large (over 10 MB), skipped",
+      unsupported: "unsupported type, skipped (use JPG, PNG or PDF)",
+      processError: "could not be processed, skipped",
+      tooMany: "You can attach up to 20 files per visit.",
       sectionWorklist: "Verification worklist (internal)",
       addWorklistItem: "+ Add item",
       worklistItem: "Item to verify",
@@ -117,6 +126,15 @@
       noMeds: "لا توجد أدوية مسجلة.",
       notProvided: "—",
       exportWord: "تنزيل سجل Word",
+      sectionAttachments: "المرفقات",
+      attachAdd: "إضافة ملفات",
+      attachHint: "صور (JPG/PNG) أو PDF · حتى 10 ميجابايت لكل ملف · 20 لكل زيارة",
+      attachOpen: "فتح الملف",
+      attachDelete: "حذف",
+      fileTooLarge: "كبير جدًا (أكثر من 10 ميجابايت)، تم تخطيه",
+      unsupported: "نوع غير مدعوم، تم تخطيه (استخدم JPG أو PNG أو PDF)",
+      processError: "تعذّر معالجته، تم تخطيه",
+      tooMany: "يمكن إرفاق حتى 20 ملفًا لكل زيارة.",
       sectionWorklist: "قائمة التحقق قبل الإصدار (داخلية)",
       addWorklistItem: "+ إضافة عنصر",
       worklistItem: "عنصر للتحقق",
@@ -196,6 +214,7 @@
     buildAlertInputs();
     buildWorklistInputs();
     buildProblemChips();
+    refreshDraftAttachments();
 
     if (state.lastRecord) {
       renderInto($("recordOutput"), buildRecordView(state.lastRecord));
@@ -617,8 +636,18 @@
     };
   }
 
+  // Render the draft (not-yet-saved) attachments under the upload control.
+  function refreshDraftAttachments() {
+    if (!window.SeniorsUploads || !window.SeniorsDB) return;
+    window.SeniorsUploads.renderList($("attachList"), window.SeniorsDB.DRAFT_VISIT_ID, {
+      editable: true,
+      onChange: refreshDraftAttachments,
+    });
+  }
+
   function resetForm() {
     $("visitForm").reset();
+    if ($("attachMsg")) $("attachMsg").hidden = true;
     $("problemChips").innerHTML = "";
     $("labRows").innerHTML = "";
     $("alertRows").innerHTML = "";
@@ -629,6 +658,7 @@
     buildAlertInputs();
     buildWorklistInputs();
     buildProblemChips();
+    refreshDraftAttachments();
     $("medsList").innerHTML = "";
     $("medsList").appendChild(buildMedRow());
   }
@@ -949,6 +979,13 @@
       recordSection("medications", medsBlock(visit)),
     ];
 
+    // Attachments — thumbnails filled asynchronously (full files load only on tap).
+    const attachContainer = el("div", { class: "attach-grid" });
+    sections.push(recordSection("sectionAttachments", attachContainer));
+    if (visit.id != null && window.SeniorsUploads) {
+      window.SeniorsUploads.renderList(attachContainer, visit.id, { editable: false, showEmpty: true });
+    }
+
     // Export button.
     const exportBtn = el("button", {
       class: "btn btn-secondary btn-export",
@@ -1161,7 +1198,10 @@
     errorEl.hidden = true;
 
     try {
-      await window.SeniorsDB.saveVisit(visit);
+      const newId = await window.SeniorsDB.saveVisit(visit);
+      visit.id = newId;
+      // Attach any files added while composing to this saved visit.
+      await window.SeniorsDB.linkDraftsToVisit(newId);
     } catch (err) {
       console.error("Failed to save record:", err);
       errorEl.textContent = String(err);
@@ -1181,6 +1221,8 @@
   // Init
   // ---------------------------------------------------------------------------
   function init() {
+    if (window.SeniorsUploads) window.SeniorsUploads.configure({ t: t });
+
     const saved = localStorage.getItem("seniors-med-lang");
     applyLanguage(saved === "ar" ? "ar" : "en");
 
@@ -1203,6 +1245,24 @@
 
     $("addWorklist").addEventListener("click", () => {
       $("worklistRows").appendChild(makeWorklistRow());
+    });
+
+    // Attachments: clear abandoned drafts from a previous unsaved session,
+    // then wire the file picker.
+    if (window.SeniorsDB) {
+      window.SeniorsDB.clearDrafts().then(refreshDraftAttachments);
+    }
+    $("attachInput").addEventListener("change", async (e) => {
+      const msg = $("attachMsg");
+      const result = await window.SeniorsUploads.addFiles(e.target.files);
+      e.target.value = ""; // allow re-selecting the same file
+      if (result.errors.length) {
+        msg.textContent = result.errors.join("  ");
+        msg.hidden = false;
+      } else {
+        msg.hidden = true;
+      }
+      refreshDraftAttachments();
     });
 
     $("addProblem").addEventListener("click", addCustomProblem);
