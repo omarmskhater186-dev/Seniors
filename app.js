@@ -36,6 +36,8 @@
       dosing: "Dosing instructions (Arabic)",
       addMed: "+ Add medication",
       removeMed: "Remove",
+      addOther: "+ Add other",
+      otherPlaceholder: "Other condition",
       generate: "Generate record",
       recordHeading: "Visit record",
       savedHeading: "Saved records",
@@ -72,6 +74,8 @@
       dosing: "تعليمات الجرعة",
       addMed: "+ إضافة دواء",
       removeMed: "حذف",
+      addOther: "+ إضافة أخرى",
+      otherPlaceholder: "حالة أخرى",
       generate: "إنشاء السجل",
       recordHeading: "سجل الزيارة",
       savedHeading: "السجلات المحفوظة",
@@ -144,12 +148,16 @@
     document.querySelectorAll("[data-i18n]").forEach((node) => {
       node.textContent = t(node.getAttribute("data-i18n"));
     });
+    document.querySelectorAll("[data-i18n-aria]").forEach((node) => {
+      node.setAttribute("aria-label", t(node.getAttribute("data-i18n-aria")));
+    });
 
     document.title = t("appTitle");
     $("langToggle").textContent = t("langToggle");
 
     // Rebuild config-driven inputs so their labels follow the new language.
     buildVitalsInputs();
+    buildProblemChips();
 
     if (state.lastRecord) {
       renderInto($("recordOutput"), buildRecordCard(state.lastRecord));
@@ -182,6 +190,63 @@
       ]);
       grid.appendChild(field);
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Problem list chips (built from config; supports free-text "other")
+  // ---------------------------------------------------------------------------
+  function makeChip(id, label, on) {
+    const chip = el("button", {
+      class: "chip" + (on ? " chip--on" : ""),
+      attrs: { type: "button", "aria-pressed": on ? "true" : "false", "data-problem-id": id },
+      text: label,
+    });
+    chip.addEventListener("click", () => {
+      const now = chip.getAttribute("aria-pressed") === "true";
+      chip.setAttribute("aria-pressed", now ? "false" : "true");
+      chip.classList.toggle("chip--on", !now);
+    });
+    return chip;
+  }
+
+  function makeCustomChip(text) {
+    const chip = el("button", {
+      class: "chip chip--on chip--custom",
+      attrs: { type: "button", "aria-pressed": "true", "data-problem-text": text },
+    });
+    chip.appendChild(document.createTextNode(text + " "));
+    chip.appendChild(el("span", { class: "chip__x", text: "×", attrs: { "aria-hidden": "true" } }));
+    chip.addEventListener("click", () => chip.remove());
+    return chip;
+  }
+
+  function buildProblemChips() {
+    const wrap = $("problemChips");
+    if (!wrap) return;
+    // Preserve current selection / custom entries across a rebuild.
+    const selected = new Set();
+    const customs = [];
+    wrap.querySelectorAll(".chip").forEach((ch) => {
+      const id = ch.getAttribute("data-problem-id");
+      const text = ch.getAttribute("data-problem-text");
+      if (id && ch.getAttribute("aria-pressed") === "true") selected.add(id);
+      if (text) customs.push(text);
+    });
+
+    wrap.innerHTML = "";
+    (CFG.problems || []).forEach((pr) => {
+      wrap.appendChild(makeChip(pr.id, cfgLabel(pr), selected.has(pr.id)));
+    });
+    customs.forEach((text) => wrap.appendChild(makeCustomChip(text)));
+  }
+
+  function addCustomProblem() {
+    const inp = $("problemOther");
+    const v = inp.value.trim();
+    if (!v) return;
+    $("problemChips").appendChild(makeCustomChip(v));
+    inp.value = "";
+    inp.focus();
   }
 
   // ---------------------------------------------------------------------------
@@ -244,11 +309,21 @@
       if (val) vitals[i.getAttribute("data-vital")] = val;
     });
 
+    const problems = [];
+    document.querySelectorAll("#problemChips .chip").forEach((ch) => {
+      if (ch.getAttribute("aria-pressed") !== "true") return;
+      const id = ch.getAttribute("data-problem-id");
+      const text = ch.getAttribute("data-problem-text");
+      if (id) problems.push({ id });
+      else if (text) problems.push({ text });
+    });
+
     return {
       createdAt: Date.now(),
       name: $("patientName").value.trim(),
       age: $("age").value.trim(),
       date: $("visitDate").value, // YYYY-MM-DD or ""
+      problems,
       currentSituation: $("currentSituation").value.trim(),
       vitals,
       assessment: $("assessment").value.trim(),
@@ -259,7 +334,9 @@
 
   function resetForm() {
     $("visitForm").reset();
+    $("problemChips").innerHTML = "";
     buildVitalsInputs();
+    buildProblemChips();
     $("medsList").innerHTML = "";
     $("medsList").appendChild(buildMedRow());
   }
@@ -314,6 +391,25 @@
   function textBlock(value) {
     if (!value) return null;
     return el("p", { class: "rec-text", text: value });
+  }
+
+  function problemsBlock(visit) {
+    const list = visit.problems || [];
+    if (!list.length) return null;
+    return el(
+      "div",
+      { class: "chips chips--readonly" },
+      list.map((pr) => {
+        let label;
+        if (pr.id) {
+          const item = (CFG.problems || []).find((x) => x.id === pr.id);
+          label = item ? cfgLabel(item) : pr.id;
+        } else {
+          label = pr.text;
+        }
+        return el("span", { class: "chip chip--on", text: label });
+      })
+    );
   }
 
   function vitalsBlock(visit) {
@@ -372,7 +468,7 @@
 
     // Ordered sections. Empty ones render "None recorded."
     const sections = [
-      recordSection("sectionProblems", null), // Stage 2
+      recordSection("sectionProblems", problemsBlock(visit)),
       recordSection("sectionGeriatric", null), // Stage 3
       recordSection("sectionCurrent", textBlock(visit.currentSituation || visit.notes)),
       recordSection("sectionVitals", vitalsBlock(visit)),
@@ -492,7 +588,16 @@
     applyLanguage(saved === "ar" ? "ar" : "en");
 
     buildVitalsInputs();
+    buildProblemChips();
     $("medsList").appendChild(buildMedRow());
+
+    $("addProblem").addEventListener("click", addCustomProblem);
+    $("problemOther").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addCustomProblem();
+      }
+    });
 
     $("addMed").addEventListener("click", () => {
       $("medsList").appendChild(buildMedRow());

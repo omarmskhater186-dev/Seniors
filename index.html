@@ -66,6 +66,24 @@
           </div>
         </fieldset>
 
+        <!-- Problem list -->
+        <fieldset class="form-section">
+          <legend data-i18n="sectionProblems">Problem list</legend>
+          <div id="problemChips" class="chips"></div>
+          <div class="chip-add">
+            <input
+              id="problemOther"
+              type="text"
+              autocomplete="off"
+              data-i18n-aria="otherPlaceholder"
+              aria-label="Other condition"
+            />
+            <button id="addProblem" class="btn btn-secondary" type="button" data-i18n="addOther">
+              + Add other
+            </button>
+          </div>
+        </fieldset>
+
         <!-- Current situation -->
         <fieldset class="form-section">
           <legend data-i18n="sectionCurrent">Current situation</legend>
