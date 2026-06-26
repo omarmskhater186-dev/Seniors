@@ -62,6 +62,12 @@
       noMeds: "No medications recorded.",
       notProvided: "—",
       exportWord: "Download Word record",
+      sectionWorklist: "Verification worklist (internal)",
+      addWorklistItem: "+ Add item",
+      worklistItem: "Item to verify",
+      worklistHead: "PRE-ISSUE VERIFICATION · INTERNAL WORKLIST",
+      worklistWarn:
+        "Not part of the patient record. Do not send to the family. Do not upload to Medesk. Delete before issuing.",
     },
     ar: {
       appTitle: "سينيورز ميد",
@@ -111,6 +117,12 @@
       noMeds: "لا توجد أدوية مسجلة.",
       notProvided: "—",
       exportWord: "تنزيل سجل Word",
+      sectionWorklist: "قائمة التحقق قبل الإصدار (داخلية)",
+      addWorklistItem: "+ إضافة عنصر",
+      worklistItem: "عنصر للتحقق",
+      worklistHead: "التحقق قبل الإصدار · قائمة عمل داخلية",
+      worklistWarn:
+        "ليست جزءًا من سجل المريض. لا ترسلها إلى العائلة. لا ترفعها إلى Medesk. احذفها قبل الإصدار.",
     },
   };
 
@@ -182,10 +194,11 @@
     buildGeriatricInputs();
     buildLabInputs();
     buildAlertInputs();
+    buildWorklistInputs();
     buildProblemChips();
 
     if (state.lastRecord) {
-      renderInto($("recordOutput"), buildRecordCard(state.lastRecord));
+      renderInto($("recordOutput"), buildRecordView(state.lastRecord));
     }
     loadSaved();
   }
@@ -253,6 +266,46 @@
         ])
       );
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Verification worklist input rows (internal only)
+  // ---------------------------------------------------------------------------
+  function makeWorklistRow(text) {
+    const input = el("input", {
+      class: "worklist-text",
+      attrs: { type: "text", autocomplete: "off", "aria-label": t("worklistItem") },
+    });
+    if (text) input.value = text;
+    const removeBtn = el("button", {
+      class: "btn btn-remove",
+      attrs: { type: "button", "data-i18n": "removeMed" },
+      text: t("removeMed"),
+    });
+    const row = el("div", { class: "worklist-row" }, [
+      el("div", { class: "field" }, [input]),
+      el("div", { class: "med-row__remove" }, [removeBtn]),
+    ]);
+    removeBtn.addEventListener("click", () => row.remove());
+    return row;
+  }
+
+  function readWorklistRows() {
+    const items = [];
+    document.querySelectorAll("#worklistRows .worklist-row").forEach((r) => {
+      const v = r.querySelector(".worklist-text").value.trim();
+      if (v) items.push(v);
+    });
+    return items;
+  }
+
+  function buildWorklistInputs() {
+    const wrap = $("worklistRows");
+    if (!wrap) return;
+    const existing = readWorklistRows();
+    wrap.innerHTML = "";
+    if (!existing.length) wrap.appendChild(makeWorklistRow());
+    else existing.forEach((v) => wrap.appendChild(makeWorklistRow(v)));
   }
 
   // ---------------------------------------------------------------------------
@@ -520,6 +573,7 @@
 
     const labs = readLabRows().filter((r) => r.testId && r.value);
     const alerts = readAlertRows();
+    const verification = readWorklistRows();
 
     const problems = [];
     document.querySelectorAll("#problemChips .chip").forEach((ch) => {
@@ -545,6 +599,7 @@
       assessment: $("assessment").value.trim(),
       actionPlan: $("actionPlan").value.trim(),
       meds,
+      verification,
     };
   }
 
@@ -553,10 +608,12 @@
     $("problemChips").innerHTML = "";
     $("labRows").innerHTML = "";
     $("alertRows").innerHTML = "";
+    $("worklistRows").innerHTML = "";
     buildVitalsInputs();
     buildGeriatricInputs();
     buildLabInputs();
     buildAlertInputs();
+    buildWorklistInputs();
     buildProblemChips();
     $("medsList").innerHTML = "";
     $("medsList").appendChild(buildMedRow());
@@ -898,6 +955,30 @@
     return el("article", { class: "record" }, top.concat(sections, [actions]));
   }
 
+  // The verification worklist is a separate, detachable block AFTER the record
+  // — never part of the patient record body.
+  function worklistBlock(visit) {
+    const items = visit.verification || [];
+    if (!items.length) return null;
+    return el("section", { class: "worklist" }, [
+      el("h3", { class: "worklist__head", text: t("worklistHead") }),
+      el("p", { class: "worklist__warn", text: t("worklistWarn") }),
+      el(
+        "ul",
+        { class: "worklist__items" },
+        items.map((it) => el("li", { text: it }))
+      ),
+    ]);
+  }
+
+  // A full record view: the record card plus its detachable worklist (if any).
+  function buildRecordView(visit) {
+    const view = el("div", { class: "record-view" }, [buildRecordCard(visit)]);
+    const wl = worklistBlock(visit);
+    if (wl) view.appendChild(wl);
+    return view;
+  }
+
   // Localized labels/values for the .docx exporter (single source of truth).
   function buildExportLabels(visit) {
     const name = visit.name || t("notProvided");
@@ -943,7 +1024,7 @@
       return;
     }
     empty.hidden = true;
-    visits.forEach((v) => list.appendChild(buildRecordCard(v)));
+    visits.forEach((v) => list.appendChild(buildRecordView(v)));
   }
 
   // ---------------------------------------------------------------------------
@@ -973,7 +1054,7 @@
     }
 
     state.lastRecord = visit;
-    renderInto($("recordOutput"), buildRecordCard(visit));
+    renderInto($("recordOutput"), buildRecordView(visit));
     $("recordSection").hidden = false;
     resetForm();
     await loadSaved();
@@ -991,6 +1072,7 @@
     buildGeriatricInputs();
     buildLabInputs();
     buildAlertInputs();
+    buildWorklistInputs();
     buildProblemChips();
     $("medsList").appendChild(buildMedRow());
 
@@ -1000,6 +1082,10 @@
 
     $("addAlert").addEventListener("click", () => {
       $("alertRows").appendChild(makeAlertRow());
+    });
+
+    $("addWorklist").addEventListener("click", () => {
+      $("worklistRows").appendChild(makeWorklistRow());
     });
 
     $("addProblem").addEventListener("click", addCustomProblem);

@@ -567,6 +567,58 @@ select:focus {
 }
 
 /* ----------------------------------------------------------------------------
+   Verification worklist (internal — detachable, never part of the record)
+   ---------------------------------------------------------------------------- */
+.worklist-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  margin-block-end: 0.75rem;
+}
+
+.form-section--worklist {
+  border-color: #c0392b;
+  border-style: dashed;
+}
+
+.form-section--worklist > legend {
+  color: #c0392b;
+}
+
+.worklist {
+  border: 2px dashed #c0392b;
+  background: #fdf3f2;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-block-start: 1.5rem;
+}
+
+.worklist__head {
+  color: #c0392b;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+.worklist__warn {
+  color: #c0392b;
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+}
+
+.worklist__items {
+  margin: 0;
+  padding-inline-start: 1.4rem;
+}
+
+.worklist__items li {
+  font-size: 1.05rem;
+  margin-block-end: 0.25rem;
+}
+
+/* ----------------------------------------------------------------------------
    Alerts (input rows + tiered record display) + Case résumé banner
    ---------------------------------------------------------------------------- */
 .alert-row {
