@@ -490,6 +490,19 @@
   // ---------------------------------------------------------------------------
   // Medication rows
   // ---------------------------------------------------------------------------
+  // Shared <datalist> of brand names (from config) for the drug-name fields.
+  function buildDrugDatalist() {
+    let dl = $("drugListOptions");
+    if (!dl) {
+      dl = el("datalist", { attrs: { id: "drugListOptions" } });
+      document.body.appendChild(dl);
+    }
+    dl.innerHTML = "";
+    (CFG.drugs || []).forEach((name) => {
+      dl.appendChild(el("option", { attrs: { value: name } }));
+    });
+  }
+
   function buildMedRow() {
     const id = ++medCounter;
 
@@ -499,7 +512,8 @@
     });
     const drugInput = el("input", {
       class: "drug",
-      attrs: { id: `drug-${id}`, type: "text", autocomplete: "off" },
+      // `list` links to the shared brand-name datalist for searchable suggestions.
+      attrs: { id: `drug-${id}`, type: "text", autocomplete: "off", list: "drugListOptions" },
     });
 
     const doseLabel = el("label", {
@@ -1170,6 +1184,7 @@
     const saved = localStorage.getItem("seniors-med-lang");
     applyLanguage(saved === "ar" ? "ar" : "en");
 
+    buildDrugDatalist();
     buildVitalsInputs();
     buildGeriatricInputs();
     buildLabInputs();
